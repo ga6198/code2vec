@@ -33,7 +33,7 @@ PYTHON=python3
 TRAIN_DATA_FILE=php/result/train/php/path_contexts.csv #${DATASET_NAME}.train.raw.txt
 VAL_DATA_FILE=php/result/val/php/path_contexts.csv #${DATASET_NAME}.val.raw.txt
 TEST_DATA_FILE=php/result/test/php/path_contexts.csv #${DATASET_NAME}.test.raw.txt
-EXTRACTOR_JAR=php/cli-0.3.jar #JavaExtractor/JPredict/target/JavaExtractor-0.0.1-SNAPSHOT.jar
+EXTRACTOR_JAR=cli-0.3.jar #JavaExtractor/JPredict/target/JavaExtractor-0.0.1-SNAPSHOT.jar
 
 mkdir -p data
 mkdir -p data/${DATASET_NAME}
@@ -60,6 +60,14 @@ cat ${TRAIN_DATA_FILE} | cut -d' ' -f1 | awk '{n[$0]++} END {for (i in n) print 
 cat ${TRAIN_DATA_FILE} | cut -d' ' -f2- | tr ' ' '\n' | cut -d',' -f1,3 | tr ',' '\n' | awk '{n[$0]++} END {for (i in n) print i,n[i]}' > ${ORIGIN_HISTOGRAM_FILE}
 cat ${TRAIN_DATA_FILE} | cut -d' ' -f2- | tr ' ' '\n' | cut -d',' -f2 | awk '{n[$0]++} END {for (i in n) print i,n[i]}' > ${PATH_HISTOGRAM_FILE}
 
+# print out information on data files to detect any issues before preprocessing
+echo "Train data raw file size:"
+stat --printf="%s\n" ${TRAIN_DATA_FILE}
+echo "Val data raw file size:"
+stat --printf="%s\n" ${VAL_DATA_FILE}
+echo "Test data raw file size:"
+stat --printf="%s\n" ${TEST_DATA_FILE}
+
 ${PYTHON} preprocess.py --train_data ${TRAIN_DATA_FILE} --test_data ${TEST_DATA_FILE} --val_data ${VAL_DATA_FILE} \
   --max_contexts ${MAX_CONTEXTS} --word_vocab_size ${WORD_VOCAB_SIZE} --path_vocab_size ${PATH_VOCAB_SIZE} \
   --target_vocab_size ${TARGET_VOCAB_SIZE} --word_histogram ${ORIGIN_HISTOGRAM_FILE} \
@@ -67,6 +75,6 @@ ${PYTHON} preprocess.py --train_data ${TRAIN_DATA_FILE} --test_data ${TEST_DATA_
     
 # If all went well, the raw data files can be deleted, because preprocess.py creates new files 
 # with truncated and padded number of paths for each example.
-rm ${TRAIN_DATA_FILE} ${VAL_DATA_FILE} ${TEST_DATA_FILE} ${TARGET_HISTOGRAM_FILE} ${ORIGIN_HISTOGRAM_FILE} \
+# rm ${TRAIN_DATA_FILE} ${VAL_DATA_FILE} ${TEST_DATA_FILE} ${TARGET_HISTOGRAM_FILE} ${ORIGIN_HISTOGRAM_FILE} \
   ${PATH_HISTOGRAM_FILE}
 

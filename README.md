@@ -1,4 +1,7 @@
 # Code2vec
+
+Training w/ train.sh seems to fail if a file does not have a function
+
 A neural network for learning distributed representations of code.
 This is an official implementation of the model described in:
 

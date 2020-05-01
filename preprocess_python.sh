@@ -48,7 +48,7 @@ java -jar ${EXTRACTOR_JAR} code2vec --lang py --project python/test --output pyt
 echo "Finished extracting paths from test set"
 echo "Extracting paths from training set..."
 #${PYTHON} JavaExtractor/extract.py --dir ${TRAIN_DIR} --max_path_length 8 --max_path_width 2 --num_threads ${NUM_THREADS} --jar ${EXTRACTOR_JAR} | shuf > ${TRAIN_DATA_FILE}
-java -jar ${EXTRACTOR_JAR} code2vec --lang py --project python/val --output python/result/train
+java -jar ${EXTRACTOR_JAR} code2vec --lang py --project python/train --output python/result/train
 echo "Finished extracting paths from training set"
 
 TARGET_HISTOGRAM_FILE=data/${DATASET_NAME}/${DATASET_NAME}.histo.tgt.c2v

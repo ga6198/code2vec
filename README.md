@@ -2,6 +2,15 @@
 
 Training w/ train.sh seems to fail if a file does not have a function
 
+# Exporting code vectors
+python3 code2vec.py --load models/sqlInjection/saved_model --save_w2v models/sqlInjection/tokens.txt
+(Note that there are files like saved_model.index and saved_model.meta, but you just need to drop the suffix)
+
+Still need to find out why there is only one iteration despite 20 iterations specified in config.py
+(is it because of the small data set?)
+
+
+
 A neural network for learning distributed representations of code.
 This is an official implementation of the model described in:
 

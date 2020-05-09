@@ -3,8 +3,10 @@ id,token
 275,selectidusernamefromvtigeruserswherestatusactiveanddeleted
 211,_:_
 291,getusername
+322,year
 271,andvtigercrmentitysmowneridin
 71,orid
+327,echo
 284,useridinuse
 22,queryresult
 36,userid
@@ -71,6 +73,7 @@ id,token
 201,gettranslatedstring
 15,result
 207,br
+320,sec
 112,min
 197,getuserfullname
 51,isadmin
@@ -92,6 +95,7 @@ id,token
 58,calendar
 209,lblsubject
 279,b
+319,d
 222,h
 42,i
 84,endtime
@@ -102,6 +106,7 @@ id,token
 185,lblupdated
 255,sttime
 248,qry
+318,y
 164,getcurrentuseraccessgroups
 305,z
 28,{
@@ -110,6 +115,7 @@ id,token
 308,curruserid
 250,sendnotification
 217,formatusertimestring
+326,die
 170,getuserarray
 246,maildata
 113,fmt
@@ -131,6 +137,7 @@ id,token
 91,list
 23,users
 273,sqlescapestring
+323,month
 198,name
 186,updated
 230,desc
@@ -172,6 +179,7 @@ id,token
 109,endhour
 94,ampm
 160,picklistvalueidwhereroleid
+315,isset
 167,namearray
 187,lblcreated
 235,focus
@@ -211,6 +219,7 @@ id,token
 155,innerjoinvtigerrolepicklistonvtigerrolepicklistpicklistvalueid
 177,log
 145,classsmall
+314,fieldval
 298,groupusers
 10,selectvtigerusersvtigersharedcalendarfromvtigersharedcalendarleftjoinvtigerusersonvtigersharedcalendarsharedidvtigerusersidwhereuserid
 272,andvtigercrmentitysmownerid
@@ -222,11 +231,13 @@ id,token
 159,orderbysortidasc
 171,getselectoptionsarray
 174,groupoption
+316,ymdhis
 48,php
 31,return
 240,toemail
 202,msg
 221,date
+325,}]
 229,subject
 166,fetcharray
 38,sharedids
@@ -235,11 +246,13 @@ id,token
 82,unset
 189,mode
 216,datetime
+321,split
 126,hrid
 32,function
 178,currentlanguage
 301,generatequestionmarks
 154,from
+324,day
 129,selected
 52,==
 268,all
@@ -251,6 +264,7 @@ id,token
 85,format
 295,getgroupusers
 9,EMPTY_TOKEN
+317,currtime
 264,entquotes
 13,->
 75,errorfillinginuserarray

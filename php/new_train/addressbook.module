@@ -1,0 +1,401 @@
+<?php
+
+/** 
+ *  Addressbook module for drupal 
+ *
+ *  Copyright (C) 2006-2010
+ *  =======================
+ *
+ *  Created by wplaat
+ *
+ *  For more information visit the following website.
+ *  Website : http://www.plaatsoft.nl 
+ *
+ *  Or send an email to the following address.
+ *  Email   : info@plaatsoft.nl
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, version 2.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+// ##################################################################################
+// Defines
+// ##################################################################################
+
+// Module version
+define('ADDRESSBOOK_VERSION' ,'v4.2');
+
+// Addressbook module URLs.
+define('URL_ADDRESSBOOK',           'addressbook');
+define('URL_ADDRESSBOOK_FAMILY',    'addressbook/family');
+define('URL_ADDRESSBOOK_MEMBER',    'addressbook/member');
+define('URL_ADDRESSBOOK_UPLOAD',	'addressbook/upload');
+define('URL_ADDRESSBOOK_DOWNLOAD', 	'addressbook/download');
+
+define('ADDRESSBOOK_IMAGE_DIR',        file_directory_path().'/addressbook');
+define('ADDRESSBOOK_THUMBNAILS_DIR',   file_directory_path().'/addressbook/thumbnails');
+
+// ##################################################################################
+// Load all php, js and css files
+// ##################################################################################
+
+// PHP module files
+module_load_include('inc', 'addressbook', 'addressbook_utils'); 
+module_load_include('inc', 'addressbook', 'addressbook_mainmenu');
+module_load_include('inc', 'addressbook', 'addressbook_family');
+module_load_include('inc', 'addressbook', 'addressbook_member');
+module_load_include('inc', 'addressbook', 'addressbook_picture');
+module_load_include('inc', 'addressbook', 'addressbook_csv_upload');
+module_load_include('inc', 'addressbook', 'addressbook_csv_download');
+module_load_include('inc', 'addressbook', 'addressbook_map');
+
+// ADD Java Scripts files
+drupal_add_js(drupal_get_path('module', 'addressbook'). '/js/addressbook.js');
+
+// Add CSS files
+drupal_add_css(drupal_get_path('module', 'addressbook') .'/css/addressbook.css');
+
+// ##################################################################################
+// Help
+// ##################################################################################
+
+/**
+ * help hook()
+ * @return help texts
+ */
+function addressbook_help($path, $arg) {
+
+  $output = '';
+  switch ($path) {
+    case 'admin/modules#description':
+      $output .= t('Addressbook module');
+      break;
+  }
+  return $output;
+}
+
+// ##################################################################################
+// Mail
+// ##################################################################################
+
+function addressbook_mail($key, &$message, $params) 
+{
+  $message['subject'] = $params['subject']; 
+  $message['body'] = $params['body'];
+}
+
+// ##################################################################################
+// Menu
+// ##################################################################################
+
+/**
+ * menu hook()
+ * @return array of menu items
+ */
+function addressbook_menu() {
+
+	$items[URL_ADDRESSBOOK] = array(
+                   'title' => 'Addressbook main menu',
+                   'page callback' => 'addressbook_mainmenu',
+                   'access arguments' => array('view addressbook'),
+                   'type' => MENU_CALLBACK,
+                );
+
+	$items[URL_ADDRESSBOOK_FAMILY] = array(
+                   'title' => 'Addressbook data',
+                   'page callback' => 'addressbook_family',
+                   'access arguments' => array('view addressbook'),
+                   'type' => MENU_CALLBACK,
+                );
+
+	$items[URL_ADDRESSBOOK_MEMBER] = array(
+                   'title' => 'Addressbook data',
+                   'page callback' => 'addressbook_member',
+                   'access arguments' => array('view addressbook'),
+                   'type' => MENU_CALLBACK,
+                );
+				
+	$items[URL_ADDRESSBOOK_UPLOAD] = array(
+                   'title' => 'Addressbook CSV upload',
+                   'page callback' => 'addressbook_upload_csv',
+                   'access arguments' => array('administer addressbook'),
+                   'type' => MENU_CALLBACK,
+                );
+
+	$items[URL_ADDRESSBOOK_DOWNLOAD] = array(
+                   'title' => 'Addressbook CSV download',
+                   'page callback' => 'addressbook_download_csv',
+                   'access arguments' => array('administer addressbook'),
+                   'type' => MENU_CALLBACK,
+                );
+
+	$items['admin/settings/addressbook'] = array(
+                   'title' => 'Addressbook',
+                   'description' => 'Settings of addressbook.',
+                   'page callback' => 'drupal_get_form',
+                   'page arguments' => array('addressbook_settings'),
+                   'access arguments' => array('administer site configuration'),
+                   'type' => MENU_NORMAL_ITEM,
+                );
+
+  return $items;
+}
+
+// ##################################################################################
+// Permission
+// ##################################################################################
+
+/**
+  * Valid permissions for this module.
+  * @return array an array of valid permission for the module
+  */
+function addressbook_perm() {
+
+  return array('view addressbook','edit addressbook',"administer addressbook" );
+}
+
+// ##################################################################################
+// Settings page
+// ##################################################################################
+
+/**
+ * Module configuration settings.
+ * @return settings HTML or deny access
+ */
+function addressbook_settings() {
+
+  //only administrators can access this module
+  if (!user_access('access administration pages')) {
+    return drupal_access_denied();
+  }
+
+  $form['settings_general'] = array('#type' => 'fieldset', '#title' => t('General settings'));
+
+  $form['settings_general']['addressbook_name_format'] = array(
+     '#type' => 'select',
+     '#title' => t('Name format '),
+     '#default_value' => variable_get('addressbook_name_format',1),
+     '#options' => array( 0 => t('middle last, first'), 1 => t('first middle last') ),
+     '#description' => t('Set the name format which will be used in the general addressbook list page.'));
+
+  $form['settings_general']['addressbook_roles'] = array(
+     '#type' => 'textarea',
+     '#title' => t('Roles'),
+     '#default_value' => variable_get('addressbook_roles', ''),
+     '#rows' => 1,
+     '#description' => t("Enter the roles which a person can have (Seperate items with commas (,). No spaces allowed).") );
+
+  $form['settings_general']['addressbook_country'] = array(
+     '#type' => 'textfield',
+     '#title' => t('Country'),
+     '#default_value' => variable_get('addressbook_country', t('Nederland')),
+     '#description' => t("Specify default country for new address items."),
+     '#maxlength' => '50',
+     '#size' => '50');
+
+  $form['settings_general']['addressbook_show_thumbnails'] = array(
+     '#type' => 'select',
+     '#title' => t('Show thumbnails pictures in list views'),
+     '#default_value' => variable_get('addressbook_show_thumbnails',0),
+     '#options' => array( 0 => t('No'), 1 => t('Yes') ),
+     '#description' => t('Enable / disable thumbnail pictures in family list and family member list.'));
+
+  $form['settings_general']['addressbook_last_upload_date'] = array(
+     '#type' => 'textfield',
+     '#title' => t('Date'),
+     '#default_value' => variable_get('addressbook_last_upload_date', ''),
+     '#description' => t("The last edit date (dd-mm-yyyy) of the addressbook data."),
+     '#maxlength' => '10',
+     '#size' => '11');
+	  
+  $form['map24'] = array('#type' => 'fieldset', '#title' => t('Map settings'));
+
+  $form['map24']['addressbook_map_link'] = array(
+     '#type' => 'select',
+     '#title' => t('Activate map link'),
+     '#default_value' => variable_get('addressbook_map_link',0),
+     '#options' => array( 0 => t('No'), 1 => t('Yes') ),
+     '#description' => t('Enable / Disable Activate www.map24.com fast link.'));
+
+  $form['map24']['addressbook_map_key'] = array(
+     '#type' => 'textfield',
+     '#title' => t('Free www.map24.com access key'),
+     '#default_value' => variable_get('addressbook_map_key', ''),
+     '#description' => t("Enter access key (Visit http://www.map24.com to obtain a free key)"),
+     '#maxlength' => '50',
+     '#size' => '50');
+
+
+
+  $form['birthday'] = array('#type' => 'fieldset', '#title' => t('Birthday notification settings'));
+
+  $form['birthday']['addressbook_birthday_notification'] = array(
+     '#type' => 'select',
+     '#title' => t('Birthday email notification'),
+     '#default_value' => variable_get('addressbook_birthday_notification',0),
+     '#options' => array( 0 => t('No'), 1 => t('Yes') ),
+     '#description' => t('Enable / disable email birthday notification.'));
+
+  $form['birthday']['addressbook_birthday_subject'] = array(
+     '#type' => 'textfield',
+     '#title' => t('Subject of birtday e-mail'),
+     '#default_value' => variable_get('addressbook_birthday_subject','Happy birthday %username from %site_name'),
+     '#maxlength' => 180,
+     '#description' => t('Customize the subject of your birthday e-mail, which is sent to members upon their birthday.') .' '. t('Available variables are:') .' %username, %site_name');
+
+  $form['birthday']['addressbook_birthday_body'] = array(
+     '#type' => 'textarea',
+     '#title' => t('Body of birthday e-mail'),
+     '#default_value' => variable_get('addressbook_birthday_body',"Dear %username,\r\n\r\nCongratulation with your %user_age ste birthday.\r\nHave a nice day!\r\n"),
+     '#rows' => 15,
+     '#description' => t('Customize the body of the birthday e-mail, which is sent to members upon their birthday.') .' '. t('Available variables are:') .' %username, %user_age, %site_name');
+
+  return system_settings_form($form);
+}
+
+// ##################################################################################
+// Cron
+// ##################################################################################
+
+/**
+  * Find all family members which are celebrating their birthday to day and send them an email.
+  * @return emails
+  */
+function addressbook_cron() {
+
+  // If birthday notification is enabled check all family members.
+  if ( variable_get('addressbook_birthday_notification',0)==1 ) {
+
+    // Send the birthday notication only once in any given day (crontab may run more frequently)
+    $current_day=date('-m-d');
+    $current_time=date('H');
+
+    if ($current_time==0) {
+      watchdog('cron', 'Addressbook birthday cron');
+
+      // Fetch all members with are celebrating there birtday
+      $query='
+		SELECT 
+			first_name, 
+			middle_name, 
+			last_name, 
+			email, 
+			birth_day 
+		FROM 
+			{addressbook_member} 
+		WHERE 
+			birth_day LIKE "%'.$current_day.'"';
+      
+	  $queryResult = db_query($query);
+      while ($data = db_fetch_object($queryResult)) {
+        $username=view_name($data->first_name,$data->middle_name,$data->last_name,true);
+
+        $email = $data->email;
+        $site_name = variable_get('site_name', 'Drupal');
+
+        // Calculate member age
+        list($year, $month, $day) = split('[/.-]', $data->birth_day);
+        $user_age  = date('Y')-$year;
+
+        // if family member have a email address send a email
+        if (($email!='') && ($user_age<100)) {
+          $from=$site_name.'<'.variable_get('site_mail', ini_get('sendmail_from')).'>';
+
+          $subject=variable_get('addressbook_birthday_subject','Happy birthday %username from %site_name');
+          $subject=str_replace("%username", $username, $subject);
+          $subject=str_replace("%site_name", $site_name, $subject);
+
+          $body=variable_get('addressbook_birthday_body',"Dear %username,\r\n\r\nCongratulation with your %user_age ste birthday.\r\nHave a nice day!\r\n");
+          $body=str_replace("%username", $username, $body);
+          $body=str_replace("%user_age", $user_age, $body);
+          $body=str_replace("%site_name", $site_name, $body);
+
+          if (drupal_mail('Addressbook', 'send', $email, user_preferred_language($user), array('subject'=>$subject,'body'=>$body))) {           
+            watchdog('cron', 'Sent birthday email to '.$email);
+          }
+          else 
+          {
+            watchdog('cron', 'Unable to email to '.$email);
+          }
+        }
+      }
+    }
+  }
+}
+
+// ##################################################################################
+// Block
+// ##################################################################################
+
+/**
+  * Find all family members which are celebrating their birthday today and make a block of it.
+  * @return emails
+  */
+function addressbook_block($op='list', $delta=0) {
+
+  // listing of blocks, such as on the admin/block page
+  if ($op == "list") {
+
+    $block[0]["info"] = t('Birthday today');
+    return $block;
+
+  } else if ($op == 'view') {
+
+    // our block content
+    // content variable that will be returned for display
+    $block_content = '';
+
+    if (user_access('view addressbook')) {
+      $current_day=date('-m-d');
+      $current_time=date('H');
+
+      $query='
+			SELECT 
+				mid, 
+				first_name, 
+				middle_name, 
+				last_name, 
+				email, 
+				birth_day 
+			FROM 
+				{addressbook_member} 
+			WHERE 
+				birth_day LIKE "%'.$current_day.'"';
+				
+      $queryResult = db_query($query);
+      while ($data = db_fetch_object($queryResult)) {
+
+        // Calculate member age
+        list($year, $month, $day) = split('[/.-]', $data->birth_day);
+        $user_age  = date('Y')-$year;
+
+        $name=addressbook_view_name($data->first_name,$data->middle_name,$data->last_name,true,false,true);
+        $block_content .= l( $name.' ['.$user_age.'] ',URL_ADDRESSBOOK_MEMBER.'/'.$data->mid) . '<br />';
+      }
+    }
+
+    // check to see if there was any content before setting up the block
+    if ($block_content == '') {
+        // no content from a week ago, return nothing.
+        return;
+    }
+    // set up the block
+    $block['subject'] = t('Birthdays today');
+    $block['content'] = $block_content;
+    return $block;
+  }
+}
+
+// ##################################################################################
+// The end
+// ##################################################################################

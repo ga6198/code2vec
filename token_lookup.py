@@ -22,7 +22,7 @@ def add_to_lookup_dict(lookup_dict, source_file):
         else: #if token in lookup_dictionary, retrieve the number. Then compare it against the token id
             id_from_lookup = lookup_dict[value]
             if id_from_lookup != value_id:
-                values_to_replaces.append({"original_value":value_id, "new_value":id_from_lookup})
+                values_to_replace.append({"original_value":value_id, "new_value":id_from_lookup})
 
     return lookup_dict, values_to_replace     
 
@@ -63,7 +63,11 @@ def replace_values(target_file, values_to_replace):
 
 def replace_path_contexts(target_file, tokens_to_replace, paths_to_replace):
     #replace the tokens in the path_contexts.csv w/ the ones in the lookup
-    path_contexts_df = pd.read_csv(target_file, sep=" ")
+    #path_contexts_df = pd.read_csv(target_file, sep=" ") #cannot use this due to uneven columns
+    path_contexts_df = pd.DataFrame()
+    with open(target_file, 'r') as f:
+        for line in f:
+            path_contexts_df = pd.concat( [path_contexts_df, pd.DataFrame([tuple(line.strip().split(' '))])], ignore_index=True )
 
     #print(path_contexts_df)
     new_path_contexts_data = {'label': [], 'path-contexts':[]}
@@ -183,11 +187,21 @@ def strip_extra_spaces(source_file):
     #write lines to file, with newline in between
     with open(source_file, 'w') as f:
         f.write('\n'.join(stripped_lines))
-    
+
+def run_lookup_on_subfolders(source_dir, token_lookup, node_lookup, paths_lookup):
+    #grab subfolders: e.g. test_0, test_1, test_2
+    subfolders = [f.path for f in os.scandir(train_dir) if f.is_dir()]
+    print(subfolders)
+
+    for subfolder in subfolders:
+        target_dir = os.path.join(subfolder, "php")
+        token_lookup, node_lookup, paths_lookup = merge_path_contexts(target_dir, token_lookup, node_lookup, paths_lookup) #merge_path_contexts("pathcontexts", token_lookup)
+
+    return token_lookup, node_lookup, paths_lookup
 
 #####Main Code#####
 parser = argparse.ArgumentParser()
-parser.add_argument("-d", "--dir", help="Source directory to parse") #source directory
+parser.add_argument("-d", "--dir", help="Source directory to parse") #source directory, eg. php/result
 args = parser.parse_args()
 
 token_lookup = {}
@@ -195,4 +209,12 @@ node_lookup = {}
 paths_lookup = {}
 
 if args.dir:
-    token_lookup, node_lookup, paths_lookup = merge_path_contexts(args.dir, token_lookup, node_lookup, paths_lookup) #merge_path_contexts("pathcontexts", token_lookup)
+    train_dir = os.path.join(args.dir, "train", "php")
+    test_dir = os.path.join(args.dir, "test", "php")
+    val_dir = os.path.join(args.dir, "val", "php")
+    
+    token_lookup, node_lookup, paths_lookup = run_lookup_on_subfolders(val_dir, token_lookup, node_lookup, paths_lookup)
+    token_lookup, node_lookup, paths_lookup = run_lookup_on_subfolders(test_dir, token_lookup, node_lookup, paths_lookup)
+    token_lookup, node_lookup, paths_lookup = run_lookup_on_subfolders(train_dir, token_lookup, node_lookup, paths_lookup)
+
+    #token_lookup, node_lookup, paths_lookup = merge_path_contexts(args.dir, token_lookup, node_lookup, paths_lookup) #merge_path_contexts("pathcontexts", token_lookup)
